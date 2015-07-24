@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:os-core="http://www.openspaces.org/schema/core"
+	xmlns:os-events="http://www.openspaces.org/schema/events"
+	xmlns:os-remoting="http://www.openspaces.org/schema/remoting"
+	xmlns:os-sla="http://www.openspaces.org/schema/sla"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.openspaces.org/schema/core http://www.openspaces.org/schema/core/openspaces-core.xsd
+       http://www.openspaces.org/schema/events http://www.openspaces.org/schema/events/openspaces-events.xsd
+       http://www.openspaces.org/schema/remoting http://www.openspaces.org/schema/remoting/openspaces-remoting.xsd
+       http://www.openspaces.org/schema/sla http://www.openspaces.org/schema/sla/openspaces-sla.xsd">
+
+
+	<bean id="propertiesConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:database.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<context:annotation-config />
+	<os-core:giga-space-context />
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${data-source-driver}" />
+		<property name="url" value="${data-source-url}" />
+		<property name="username" value="${data-source-username}" />
+		<property name="password" value="${data-source-password}" />
+		<property name="maxActive" value="100" />
+		<property name="initialSize" value="10" />
+	</bean>
+
+
+	<bean id="gsDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.user}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialSize" value="10" />
+		<property name="maxActive" value="100" />
+	</bean>
+
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="gsDataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.cache.provider_class">${hibernate.cache.provider_class}</prop>
+				<prop key="hibernate.cache.use_second_level_cache">${hibernate.cache.use_second_level_cache}</prop>
+				<prop key="hibernate.cache.use_query_cache">${hibernate.cache.use_query_cache}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<prop key="hibernate.generate_statistics">${hibernate.generate_statistics}</prop>
+				<prop key="hibernate.hbm2ddl.auto">validate</prop>
+				<prop key="hibernate.jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>
+				<prop key="hibernate.jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>
+				<prop key="hibernate.order_updates">${hibernate.order_updates}</prop>
+				<prop key="hibernate.order_inserts">${hibernate.order_inserts}</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="hibernateSpaceDataSource"
+		class="org.openspaces.persistency.hibernate.DefaultHibernateSpaceDataSourceFactoryBean">
+		<property name="sessionFactory" ref="sessionFactory" />
+		<property name="fetchSize" value="200" />
+		<property name="initialLoadChunkSize" value="10000" />
+		<property name="initialLoadThreadPoolSize" value="$10" />
+		<property name="performOrderById" value="true" />
+		<property name="useScrollableResultSet" value="true" />
+		<property name="augmentInitialLoadEntries" value="true" />
+		<property name="initialLoadQueryScanningBasePackages">
+			<list>
+				<value>com.manuelvieda.gs.example.model</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="hibernateSpaceSynchronizationEndpoint"
+		class="org.openspaces.persistency.hibernate.DefaultHibernateSpaceSynchronizationEndpointFactoryBean">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<os-core:embedded-space 
+		id="space" 
+		name="space"
+		schema="persistent" 
+		space-data-source="hibernateSpaceDataSource"
+		space-sync-endpoint="hibernateSpaceSynchronizationEndpoint">
+		
+		<os-core:properties>
+			<props>
+				<prop key="space-config.engine.cache_policy">1</prop>
+				<prop key="cluster-config.cache-loader.external-data-source">true</prop>
+				<prop key="cluster-config.cache-loader.central-data-source">true</prop>
+				<prop key="space-config.engine.memory_usage.high_watermark_percentage">95</prop>
+	            <prop key="space-config.engine.memory_usage.write_only_block_percentage">85</prop>
+	            <prop key="space-config.engine.memory_usage.write_only_check_percentage">76</prop>
+	            <prop key="space-config.engine.memory_usage.low_watermark_percentage">75</prop>
+	            <prop key="space-config.engine.memory_usage.gc-before-shortage">true</prop>
+			</props>
+		</os-core:properties>
+	</os-core:embedded-space>
+	
+	<os-core:giga-space
+        id="gigaSpace"
+        space="space"
+        tx-manager="transactionManager" />
+
+    <tx:annotation-driven transaction-manager="transactionManager" />
+    <os-core:distributed-tx-manager id="transactionManager" />
+
+</beans>
