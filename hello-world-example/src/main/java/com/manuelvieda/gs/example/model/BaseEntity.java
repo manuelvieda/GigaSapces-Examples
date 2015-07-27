@@ -5,8 +5,9 @@
  */
 package com.manuelvieda.gs.example.model;
 
-import java.beans.Transient;
 import java.io.Serializable;
+
+import javax.persistence.Transient;
 
 import org.apache.commons.lang3.StringUtils;
 import org.openspaces.core.cluster.ClusterInfo;
@@ -37,6 +38,11 @@ public abstract class BaseEntity<T extends Serializable> implements Serializable
 	 * Length for UUIDs
 	 */
 	protected static final int UUID_LENGTH = 36;
+	
+	/**
+	 * Length for enumerations in database
+	 */
+	protected static final int ENUM_LENGTH = 64;
 	
 	/**
 	 * The space lease expiration field name
