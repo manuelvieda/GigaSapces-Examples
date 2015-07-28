@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:os-core="http://www.openspaces.org/schema/core"
+	xmlns:os-events="http://www.openspaces.org/schema/events"
+	xmlns:os-remoting="http://www.openspaces.org/schema/remoting"
+	xmlns:os-sla="http://www.openspaces.org/schema/sla" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.openspaces.org/schema/core http://www.openspaces.org/schema/core/openspaces-core.xsd
+       http://www.openspaces.org/schema/events http://www.openspaces.org/schema/events/openspaces-events.xsd
+       http://www.openspaces.org/schema/remoting http://www.openspaces.org/schema/remoting/openspaces-remoting.xsd
+       http://www.openspaces.org/schema/sla http://www.openspaces.org/schema/sla/openspaces-sla.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
+       
+       <bean id="propertiesConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:database.properties</value>
+			</list>
+		</property>
+	</bean>
+	
+	
+	<context:component-scan base-package="com.manuelvieda.gs.example" />
+
+	<context:annotation-config />
+	<os-core:giga-space-context />
+	<os-core:annotation-support />
+	<os-events:annotation-support />
+	
+	
+	<bean id="gsDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.user}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialSize" value="10" />
+		<property name="maxActive" value="100" />
+	</bean>
+
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="gsDataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.cache.provider_class">${hibernate.cache.provider_class}</prop>
+				<prop key="hibernate.cache.use_second_level_cache">${hibernate.cache.use_second_level_cache}</prop>
+				<prop key="hibernate.cache.use_query_cache">${hibernate.cache.use_query_cache}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<prop key="hibernate.generate_statistics">${hibernate.generate_statistics}</prop>
+				<prop key="hibernate.hbm2ddl.auto">validate</prop>
+				<prop key="hibernate.jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>
+				<prop key="hibernate.jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>
+				<prop key="hibernate.order_updates">${hibernate.order_updates}</prop>
+				<prop key="hibernate.order_inserts">${hibernate.order_inserts}</prop>
+			</props>
+		</property>
+		<property name="annotatedClasses">
+			<list>
+				<value>com.manuelvieda.gs.example.model.Message</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="hibernateSpaceDataSource"
+		class="org.openspaces.persistency.hibernate.DefaultHibernateSpaceDataSourceFactoryBean">
+		<property name="sessionFactory" ref="sessionFactory" />
+		<property name="fetchSize" value="200" />
+		<property name="initialLoadChunkSize" value="10000" />
+		<property name="initialLoadThreadPoolSize" value="10" />
+		<property name="performOrderById" value="true" />
+		<property name="useScrollableResultSet" value="true" />
+		<property name="augmentInitialLoadEntries" value="true" />
+	</bean>
+	
+	<bean id="exceptionHandlingEDS" class="org.openspaces.persistency.patterns.SpaceSynchronizationEndpointExceptionHandler">
+		<constructor-arg ref="hibernateSpaceDataSource"/>
+		<constructor-arg ref="exceptionHandler"/>
+	</bean>
+	
+	<os-core:mirror 
+		id="spaceMirror" 
+		url="/./space-mirror" 
+		space-sync-endpoint="exceptionHandlingEDS" 
+		operation-grouping="group-by-space-transaction">
+	    <os-core:source-space name="space" partitions="2" backups="1" />
+	</os-core:mirror>
+	
+</beans>
