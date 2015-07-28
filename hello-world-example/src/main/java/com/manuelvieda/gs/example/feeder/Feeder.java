@@ -1,6 +1,6 @@
 /**
- * PayU Latam - Copyright (c) 2013 - 2015
- * http://www.payu.com.co
+ * Manuel Vieda 
+ * http://manuelvieda.com
  * Date: 27/07/2015
  */
 package com.manuelvieda.gs.example.feeder;
