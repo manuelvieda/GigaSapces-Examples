@@ -32,7 +32,7 @@ import net.jini.space.JavaSpace;
 @Polling(
 		receiveTimeout = 15000,
 		concurrentConsumers = 3,
-		maxConcurrentConsumers = 15,
+		maxConcurrentConsumers = 30,
 		gigaSpace = "gigaSpace")
 @TransactionalEvent(
 		timeout = 60,
@@ -42,7 +42,7 @@ public class SubmittedMessageProcessor extends AbstractGenericProcessor {
 	/**
 	 * Message lease
 	 */
-	@Value("${message.lease:60000}")
+	@Value("${message.lease:120000}")
 	private long messageLease;
 
 	/**
@@ -69,7 +69,7 @@ public class SubmittedMessageProcessor extends AbstractGenericProcessor {
 	public void eventListener(final Message message, final GigaSpace gigaSpace) {
 
 		try {
-			Thread.sleep(300);
+			Thread.sleep(200);
 		} catch (final InterruptedException e) {}
 
 		try {

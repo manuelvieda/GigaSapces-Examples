@@ -14,6 +14,7 @@ import org.openspaces.core.space.UrlSpaceConfigurer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.gigaspaces.client.WriteModifiers;
 import com.j_spaces.core.IJSpace;
 import com.manuelvieda.gs.example.model.Message;
 import com.manuelvieda.gs.example.model.MessageState;
@@ -55,7 +56,7 @@ public class Feeder {
 
 			// 100 Messages
 			feeder.feed(100, "100 Messages");
-			Thread.sleep(100);
+			Thread.sleep(1000);
 
 			// 1000 Messages
 			feeder.feed(1000, "1000 Messages");
@@ -66,7 +67,7 @@ public class Feeder {
 			Thread.sleep(5000);
 
 			// 20000 Messages
-			feeder.feed(20000, "20000 Messages");
+			feeder.feed(15000, "15000 Messages");
 
 		} catch (final InterruptedException e) {
 
@@ -104,7 +105,7 @@ public class Feeder {
 			message.setContent(content);
 			message.setState(MessageState.NEW);
 			message.setNewStateDate(Calendar.getInstance().getTime());
-			gigaSpace.write(message);
+			gigaSpace.write(message, WriteModifiers.WRITE_ONLY);
 
 			if (LOGGER.isDebugEnabled()) {
 				if (i % 100 == 0 && i != 0) {
